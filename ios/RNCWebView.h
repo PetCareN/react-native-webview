@@ -58,6 +58,9 @@
 @property (nonatomic, assign) BOOL showsVerticalScrollIndicator;
 @property (nonatomic, assign) BOOL directionalLockEnabled;
 @property (nonatomic, copy) NSString * _Nullable allowingReadAccessToURL;
+@property (nonatomic, assign) CGFloat keyboardHeight;
+@property (nonatomic, assign) BOOL keyboardShowing;
+@property (nonatomic, assign) BOOL keyboardWillShow;
 
 + (void)setClientAuthenticationCredential:(nullable NSURLCredential*)credential;
 + (void)setCustomCertificatesForHost:(nullable NSDictionary *)certificates;
