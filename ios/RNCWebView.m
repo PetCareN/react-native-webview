@@ -352,7 +352,8 @@ static NSDictionary* customCertificatesForHost;
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
     _isFullScreenVideoOpen = YES;
     RCTUnsafeExecuteOnMainQueueSync(^{
-      [RCTSharedApplication() setStatusBarStyle:UIStatusBarStyleLightContent animated:YES];
+      [RCTSharedApplication() setStatusBarHidden:NO animated:YES];
+      [RCTSharedApplication() setStatusBarStyle:RCTSharedApplication().statusBarStyle animated:YES];
     });
 #pragma clang diagnostic pop
 }
@@ -362,8 +363,8 @@ static NSDictionary* customCertificatesForHost;
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
     _isFullScreenVideoOpen = NO;
     RCTUnsafeExecuteOnMainQueueSync(^{
-      [RCTSharedApplication() setStatusBarHidden:self->_savedStatusBarHidden animated:YES];
-      [RCTSharedApplication() setStatusBarStyle:self->_savedStatusBarStyle animated:YES];
+      [RCTSharedApplication() setStatusBarHidden:NO animated:YES];
+      [RCTSharedApplication() setStatusBarStyle:RCTSharedApplication().statusBarStyle animated:YES];
     });
 #pragma clang diagnostic pop
 }
