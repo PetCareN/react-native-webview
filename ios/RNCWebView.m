@@ -90,18 +90,23 @@ static NSDictionary* customCertificatesForHost;
 #endif
   }
 
-  if (@available(iOS 12.0, *)) {
-    // Workaround for a keyboard dismissal bug present in iOS 12
-    // https://openradar.appspot.com/radar?id=5018321736957952
-    [[NSNotificationCenter defaultCenter]
-      addObserver:self
-      selector:@selector(keyboardWillHide)
-      name:UIKeyboardWillHideNotification object:nil];
-    [[NSNotificationCenter defaultCenter]
-      addObserver:self
-      selector:@selector(keyboardWillShow)
-      name:UIKeyboardWillShowNotification object:nil];
 
+  // Workaround for a keyboard dismissal bug present in iOS 12 and listeners for keyboard resizing
+  // https://openradar.appspot.com/radar?id=5018321736957952
+  [[NSNotificationCenter defaultCenter]
+    addObserver:self
+    selector:@selector(keyboardWillHide:)
+    name:UIKeyboardWillHideNotification object:nil];
+  [[NSNotificationCenter defaultCenter]
+    addObserver:self
+    selector:@selector(keyboardWillShow:)
+    name:UIKeyboardWillShowNotification object:nil];
+  [[NSNotificationCenter defaultCenter]
+    addObserver:self
+    selector:@selector(keyboardDidShow:)
+    name:UIKeyboardDidShowNotification object:nil];
+
+  if (@available(iOS 12.0, *)) {
     // Workaround for StatusBar appearance bug for iOS 12
     // https://github.com/react-native-community/react-native-webview/issues/62
       [[NSNotificationCenter defaultCenter] addObserver:self
@@ -363,16 +368,31 @@ static NSDictionary* customCertificatesForHost;
 #pragma clang diagnostic pop
 }
 
--(void)keyboardWillHide
+-(void)keyboardWillHide:(NSNotification *)notification
 {
     keyboardTimer = [NSTimer scheduledTimerWithTimeInterval:0 target:self selector:@selector(keyboardDisplacementFix) userInfo:nil repeats:false];
     [[NSRunLoop mainRunLoop] addTimer:keyboardTimer forMode:NSRunLoopCommonModes];
+    _keyboardShowing = false;
+    _keyboardWillShow = false;
+    [self setNeedsLayout];
 }
--(void)keyboardWillShow
+-(void)keyboardWillShow:(NSNotification *)notification
 {
     if (keyboardTimer != nil) {
         [keyboardTimer invalidate];
     }
+    _keyboardHeight = [notification.userInfo[UIKeyboardFrameEndUserInfoKey] CGRectValue].size.height;
+    NSLog(@"Keyboard will show: %f", _keyboardHeight);
+    _keyboardShowing = true;
+    _keyboardWillShow = true;
+    [self setNeedsLayout];
+}
+- (void)keyboardDidShow:(NSNotification *)notification
+{
+  _keyboardHeight = [notification.userInfo[UIKeyboardFrameEndUserInfoKey] CGRectValue].size.height;
+  _keyboardShowing = true;
+  _keyboardWillShow = false;
+  [self setNeedsLayout];
 }
 -(void)keyboardDisplacementFix
 {
@@ -706,8 +726,14 @@ static NSDictionary* customCertificatesForHost;
   [super layoutSubviews];
 
   // Ensure webview takes the position and dimensions of RNCWebView
-  _webView.frame = self.bounds;
   _webView.scrollView.contentInset = _contentInset;
+
+  if (_webView.scrollView.scrollEnabled || !_keyboardShowing) {
+    _webView.frame = self.bounds;
+  } else {
+    CGRect frame = CGRectMake(self.bounds.origin.x, self.bounds.origin.y, self.bounds.size.width, self.bounds.size.height - _keyboardHeight);
+    _webView.frame = frame;
+  }
 }
 
 - (NSMutableDictionary<NSString *, id> *)baseEvent
